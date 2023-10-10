@@ -1,4 +1,6 @@
 const http = require('http');
+const xml2js = require('xml2js');
+
 
 function handleRequest(req,res){
     if(req.method==='POST' && req.url==='/echo'){
@@ -6,7 +8,7 @@ function handleRequest(req,res){
 
         if(!isContentTypeSupported(contentType)){
             res.writeHead(415,{'Content-Type':'text/plain'});
-            res.end('Unsupported Content-Type. Supported types: text/plain, application/json,application/x-www-form-urlencoded');
+            res.end('Unsupported Content-Type. Supported types: text/plain, application/json,application/xml');
             return;
         }
 
@@ -26,16 +28,15 @@ function handleRequest(req,res){
             try{
                 switch(contentType){
                     case 'text/plain':
-                        parsedBody=rawData;
-                        responseText=parsedBody;
+                        responseText=rawData;
                         break;
                     case 'application/json':
                         parsedBody=JSON.parse(rawData);
-                        responseText=JSON.stringify(parsedBody);
+                        responseText=rawData;
                         break;
-                    case 'application/x-www-form-urlencoded':
-                        parsedBody=parseFormURLEncoded(rawData);
-                        responseText=parsedBody;
+                    case 'application/xml':
+                        parsedBody=parseXML(rawData);
+                        responseText=rawData;
                         break;
                     default:
                         res.writeHead(415,{'Content-Type':'text/plain'});
@@ -56,17 +57,14 @@ function handleRequest(req,res){
 };
 
 function isContentTypeSupported(contentType){
-    const supportedTypes=['text/plain','application/json','application/x-www-form-urlencoded'];
+    const supportedTypes=['text/plain','application/json','application/xml'];
     return supportedTypes.includes(contentType);
 }
 
-function parseFormURLEncoded(data) {
-    try{
-        const parsedData=querystring.parse(data);
-        return querystring.stringify(parsedData);
-    }catch(error){
-        throw new Error('Invalid form data');
-    }
+function parseXML(xmlData){
+    const builder=new xml2js.Builder();
+    const xml=builder.buildObject(xmlData);
+    return xml;
 }
   
 
@@ -79,5 +77,4 @@ server.listen(port,()=>{
 module.exports={
     handleRequest,
     isContentTypeSupported,
-    parseFormURLEncoded
 };
