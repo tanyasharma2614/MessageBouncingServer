@@ -1,7 +1,6 @@
 const http = require('http');
 
 function handleRequest(req,res){
-// const server = http.createServer((req,res)=>{
     if(req.method==='POST' && req.url==='/echo'){
         const contentType=req.headers['content-type'];
 
@@ -17,24 +16,32 @@ function handleRequest(req,res){
         });
 
         req.on('end',()=>{
+            if(!rawData){
+                res.writeHead(400,{'Content-Type':'text/plain'});
+                res.end('Bad Request: Missing or empty request body');
+                return;
+            }
             let parsedBody;
+            let responseText;
             try{
                 switch(contentType){
                     case 'text/plain':
                         parsedBody=rawData;
+                        responseText=parsedBody;
                         break;
                     case 'application/json':
                         parsedBody=JSON.parse(rawData);
+                        responseText=JSON.stringify(parsedBody);
                         break;
                     case 'application/x-www-form-urlencoded':
                         parsedBody=parseFormURLEncoded(rawData);
+                        responseText=parsedBody;
                         break;
                     default:
                         res.writeHead(415,{'Content-Type':'text/plain'});
                         res.end('Unsupported Content-Type. Supported types: text/plain, application/json,application/x-www-form-urlencoded');
                         return;
                     }
-                    const responseText = contentType === 'text/plain' ? parsedBody : JSON.stringify(parsedBody);
                     res.writeHead(200,{'Content-Type':contentType});
                     res.end(responseText);
             }catch(error){
@@ -53,15 +60,15 @@ function isContentTypeSupported(contentType){
     return supportedTypes.includes(contentType);
 }
 
-function parseFormURLEncoded(data){
-    const parsedData={};
-    const pairs=data.split('&');
-    for(const pair of pairs){
-        const [key,value] = pair.split('=');
-        parsedData[key]=decodeURIComponent(value);
+function parseFormURLEncoded(data) {
+    try{
+        const parsedData=querystring.parse(data);
+        return querystring.stringify(parsedData);
+    }catch(error){
+        throw new Error('Invalid form data');
     }
-    return parsedData;
 }
+  
 
 const server=http.createServer(handleRequest);
 const port = 3000;
@@ -71,5 +78,6 @@ server.listen(port,()=>{
 
 module.exports={
     handleRequest,
-    isContentTypeSupported
+    isContentTypeSupported,
+    parseFormURLEncoded
 };
