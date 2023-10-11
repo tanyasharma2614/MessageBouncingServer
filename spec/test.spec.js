@@ -121,5 +121,23 @@ describe('Message Bouncing Service',()=>{
         testRequest('/echo','application/xml',xmlData,200,'POST',done,validateContent,xmlData);
     });
     
+    it('should handle multiple concurrent requests without crashing',(done)=>{
+        const numConcurrentRequests=10;
+        const concurrentRequests=[];
+        for(let i=0;i<numConcurrentRequests;i++){
+            const data=`Request ${i}`;
+            const path='/echo';
+            const contentType='text/plain';
+            const expectedResponse=data;;
+            concurrentRequests.push(
+                new Promise((resolve)=>{
+                    testRequest(path,contentType,data,200,'POST',resolve,validateContent,expectedResponse);
+                })
+            );
+        }
+        Promise.all(concurrentRequests).then(()=>{
+            done();
+        });
+    });
 
 });
