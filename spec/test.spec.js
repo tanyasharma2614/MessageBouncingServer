@@ -82,8 +82,8 @@ describe('Message Bouncing Service',()=>{
         testRequest('/echo','application/json',"{\"hello\":\"world\"}",200,'POST',done);
     });
 
-    it('should return 200 for a POST with valid content type and valid message(application/x-www-form-urlencode)',(done)=>{
-        testRequest('/echo','text/plain','MyVariableOne=ValueOne&MyVariableTwo=ValueTwo',200,'POST',done);
+    it('should return 200 for a POST with valid content type and valid message(application/xml)',(done)=>{
+        testRequest('/echo','application/xml','<root><note>Hello</note></root>',200,'POST',done);
     });
 
     it('should return 415 for a POST with valid message but unsupported content type',(done)=>{
